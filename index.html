@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Pro Elíku ❤️</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#ff9a9e,#fad0c4);
+    min-height:100vh;
+    overflow-x:hidden;
+}
+
+/* ===== POPUP ===== */
+.popup{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:white;
+    padding:25px 35px;
+    border-radius:18px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    width:90%;
+    max-width:360px;
+    z-index:10;
+}
+
+.popup p{
+    font-size:22px;
+}
+
+.popup img{
+    width:200px;
+    display:block;
+    margin:15px auto;
+    border-radius:12px;
+}
+
+button{
+    padding:14px 26px;
+    font-size:20px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    background:#ff4d6d;
+    color:white;
+    margin:8px;
+}
+
+#buttons{
+    position:relative;
+    height:120px;
+}
+
+/* ===== GAME ===== */
+#gameContainer{
+    display:none;
+    max-width:380px;
+    margin:80px auto 0;
+    text-align:center;
+}
+
+#gameTitle{
+    font-size:22px;
+    background:#c2185b;
+    color:white;
+    padding:8px 12px;
+    border-radius:12px;
+    display:inline-block;
+    margin-bottom:12px;
+}
+
+canvas{
+    background:white;
+    border-radius:12px;
+    max-width:100%;
+}
+
+/* NE button */
+#noBtn{
+    position:absolute;
+}
+
+/* hudba */
+#musicButton{
+    position:fixed;
+    top:20px;
+    right:20px;
+    z-index:20;
+}
+</style>
+</head>
+
+<body>
+
+<!-- POPUP -->
+<div class="popup" id="popup">
+    <p id="text">Ahoj, Elíku.</p>
+    <img src="eli.gif" id="introGif">
+    <div id="buttons">
+        <button id="mainBtn" onclick="nextStep()">Ahoj?</button>
+    </div>
+</div>
+
+<!-- GAME -->
+<div id="gameContainer">
+    <div id="gameTitle">Uteč zlému křečkovi!!</div>
+    <canvas id="game" width="360" height="220"></canvas>
+</div>
+
+<audio id="bgMusic" src="valentyn.mp3" loop></audio>
+<button id="musicButton">🎵 Hudba</button>
+
+<script>
+/* ===== POPUP FLOW ===== */
+let step = 0;
+const popup = document.getElementById("popup");
+const text = document.getElementById("text");
+const gif = document.getElementById("introGif");
+const buttons = document.getElementById("buttons");
+
+function nextStep(){
+    if(step === 0){
+        text.innerText = "Když už tu jsi, na něco bych se chtěl zeptat…";
+        gif.style.display="none";
+        buttons.innerHTML='<button onclick="nextStep()">Tak se ptej?</button>';
+    }
+    else if(step === 1){
+        text.innerText = "Byla bys– ALE NE!!";
+        buttons.innerHTML='<button onclick="nextStep()">Co se děje?!</button>';
+    }
+    else if(step === 2){
+        popup.style.display="none";
+        startGame();
+    }
+    step++;
+}
+
+/* ===== MINI HRA ===== */
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+const playerImg=new Image(); playerImg.src="elik.jpg";
+const hamsterImg=new Image(); hamsterImg.src="hamster.gif";
+
+let player, hamster, spike, gravity, gameOver, spikeCount;
+
+function startGame(){
+    document.getElementById("gameContainer").style.display="block";
+    gravity=0.8;
+    gameOver=false;
+    spikeCount=0;
+
+    player={x:canvas.width/2-15,y:150,w:30,h:30,vy:0};
+    hamster={x:player.x-100,y:90,w:50,h:50,speed:1};
+    spike={x:360,y:180,w:20,h:20};
+
+    requestAnimationFrame(loop);
+}
+
+function loop(){
+    if(gameOver) return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    player.vy+=gravity;
+    player.y+=player.vy;
+    if(player.y>150){player.y=150;player.vy=0;}
+
+    ctx.drawImage(playerImg,player.x,player.y,player.w,player.h);
+
+    hamster.x+=hamster.speed;
+    if(hamster.x>player.x-100) hamster.x=player.x-100;
+    ctx.drawImage(hamsterImg,hamster.x,hamster.y,hamster.w,hamster.h);
+
+    spike.x-=4;
+    if(spike.x<-20){
+        spike.x=360;
+        spikeCount++;
+        if(spikeCount>=10){
+            winGame();
+            return;
+        }
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(spike.x,spike.y);
+    ctx.lineTo(spike.x+10,spike.y-20);
+    ctx.lineTo(spike.x+20,spike.y);
+    ctx.fill();
+
+    if(player.x<spike.x+20 && player.x+player.w>spike.x &&
+       player.y+player.h>spike.y-20){
+        endGame();
+        return;
+    }
+
+    requestAnimationFrame(loop);
+}
+
+canvas.addEventListener("click",()=>{
+    if(player.vy===0) player.vy=-13;
+});
+
+/* ===== ENDINGS ===== */
+function endGame(){
+    gameOver=true;
+    popup.style.display="block";
+    text.innerText="Zemřela jsi 😞";
+    buttons.innerHTML='<button onclick="restart()">Ještě to zkusím..</button>';
+}
+
+function restart(){
+    popup.style.display="none";
+    startGame();
+}
+
+function winGame(){
+    gameOver=true;
+    popup.style.display="block";
+    text.innerText="Uf, teď když jsi mu utekla..";
+    buttons.innerHTML='<button onclick="askValentine()">Ano?</button>';
+}
+
+function askValentine(){
+    text.innerText="Budeš moje valentýnka? 💘";
+    buttons.innerHTML=`
+        <button onclick="yesAnswer()">ANO ❤️</button>
+        <button id="noBtn">NE 😈</button>
+    `;
+
+    const noBtn=document.getElementById("noBtn");
+    noBtn.addEventListener("mouseenter", moveNo);
+    noBtn.addEventListener("touchstart", moveNo);
+}
+
+/* NE utíká */
+function moveNo(){
+    const noBtn=document.getElementById("noBtn");
+    const parent=buttons;
+
+    const maxX=parent.offsetWidth-noBtn.offsetWidth;
+    const maxY=parent.offsetHeight-noBtn.offsetHeight;
+
+    noBtn.style.left=Math.random()*maxX+"px";
+    noBtn.style.top=Math.random()*maxY+"px";
+}
+
+function yesAnswer(){
+    text.innerText="YESSS 💖💖💖";
+    buttons.innerHTML="<p>Jsem nejšťastnější ❤️</p>";
+}
+</script>
+
+</body>
+</html>
