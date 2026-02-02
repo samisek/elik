@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Pro Elíku ❤️</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:linear-gradient(135deg,#ff9a9e,#fad0c4);
+    min-height:100vh;
+    overflow-x:hidden;
+}
+
+/* POPUP */
+.popup{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:#fff;
+    padding:25px 35px;
+    border-radius:18px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    width:90%;
+    max-width:360px;
+    z-index:10;
+}
+.popup p{font-size:22px;}
+.popup img{
+    width:200px;
+    margin:15px auto;
+    display:block;
+    border-radius:12px;
+}
+
+button{
+    padding:14px 26px;
+    font-size:20px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    background:#ff4d6d;
+    color:#fff;
+    margin:8px;
+}
+
+#buttons{position:relative;height:120px;}
+#noBtn{position:absolute;}
+
+/* GAME */
+#gameContainer{
+    display:none;
+    max-width:380px;
+    margin:80px auto 0;
+    text-align:center;
+}
+#gameTitle{
+    background:#c2185b;
+    color:#fff;
+    padding:8px 12px;
+    border-radius:12px;
+    display:inline-block;
+    margin-bottom:12px;
+}
+canvas{background:#fff;border-radius:12px;max-width:100%;}
+
+/* HUD */
+#musicButton{
+    position:fixed;
+    top:20px;
+    right:20px;
+    z-index:20;
+}
+</style>
+</head>
+
+<body>
+
+<div class="popup" id="popup">
+    <p id="text">Ahoj, Elíku.</p>
+    <img src="eli.gif" id="introGif">
+    <div id="buttons">
+        <button onclick="nextStep()">Ahoj?</button>
+    </div>
+</div>
+
+<div id="gameContainer">
+    <div id="gameTitle">Uteč zlému křečkovi!!</div>
+    <canvas id="game" width="360" height="220"></canvas>
+</div>
+
+<audio id="bgMusic" src="valentyn.mp3" loop></audio>
+<button id="musicButton">🎵 Hudba</button>
+
+<script>
+/* HUDBA */
+const music=document.getElementById("bgMusic");
+document.getElementById("musicButton").onclick=()=>music.play();
+
+/* POPUP FLOW */
+let step=0;
+const popup=document.getElementById("popup");
+const text=document.getElementById("text");
+const gif=document.getElementById("introGif");
+const buttons=document.getElementById("buttons");
+
+function nextStep(){
+    if(step===0){
+        text.innerText="Když už tu jsi, na něco bych se chtěl zeptat…";
+        gif.style.display="none";
+        buttons.innerHTML='<button onclick="nextStep()">Tak se ptej?</button>';
+    }
+    else if(step===1){
+        text.innerText="Byla bys– ALE NE!!";
+        buttons.innerHTML='<button onclick="nextStep()">Co se děje?!</button>';
+    }
+    else if(step===2){
+        popup.style.display="none";
+        startGame();
+    }
+    step++;
+}
+
+/* MINI HRA */
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+const playerImg=new Image(); playerImg.src="elik.jpg";
+const hamsterImg=new Image(); hamsterImg.src="hamster.gif";
+const fireImg=new Image(); fireImg.src="fireball.png";
+
+let player,hamster,spike,fireballs=[];
+let gravity,gameOver,spikeCount,fireInterval;
+
+function startGame(){
+    document.getElementById("gameContainer").style.display="block";
+    fireballs=[];
+    gravity=0.8;
+    gameOver=false;
+    spikeCount=0;
+
+    player={x:170,y:150,w:30,h:30,vy:0};
+    hamster={x:player.x-100,y:80,w:50,h:50};
+    spike={x:360,y:180,w:20,h:20};
+
+    if(fireInterval) clearInterval(fireInterval);
+    fireInterval=setInterval(shootFire,2500); // MÉNĚ ČASTO
+
+    requestAnimationFrame(loop);
+}
+
+/* PROJEKTILY – NIKDY NETREFÍ */
+function shootFire(){
+    if(gameOver) return;
+
+    let offsetY=(Math.random()*120)-60; // velký offset
+    fireballs.push({
+        x:hamster.x+40,
+        y:hamster.y+25,
+        w:14,h:14,
+        vx:3,
+        vy:offsetY/60
+    });
+}
+
+function loop(){
+    if(gameOver) return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // player
+    player.vy+=gravity;
+    player.y+=player.vy;
+    if(player.y>150){player.y=150;player.vy=0;}
+    ctx.drawImage(playerImg,player.x,player.y,player.w,player.h);
+
+    // hamster
+    ctx.drawImage(hamsterImg,hamster.x,hamster.y,hamster.w,hamster.h);
+
+    // fireballs
+    fireballs.forEach((f,i)=>{
+        f.x+=f.vx;
+        f.y+=f.vy;
+        ctx.drawImage(fireImg,f.x,f.y,f.w,f.h);
+        if(f.x>canvas.width||f.y<0||f.y>canvas.height)
+            fireballs.splice(i,1);
+    });
+
+    // spike
+    spike.x-=4;
+    if(spike.x<-20){
+        spike.x=360;
+        spikeCount++;
+        if(spikeCount>=10){
+            winGame();
+            return;
+        }
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(spike.x,spike.y);
+    ctx.lineTo(spike.x+10,spike.y-20);
+    ctx.lineTo(spike.x+20,spike.y);
+    ctx.fill();
+
+    // collision spike
+    if(player.x<spike.x+20 && player.x+player.w>spike.x &&
+       player.y+player.h>spike.y-20){
+        die();
+        return;
+    }
+
+    requestAnimationFrame(loop);
+}
+
+canvas.addEventListener("click",()=>{ if(player.vy===0) player.vy=-13; });
+
+/* END STATES */
+function die(){
+    gameOver=true;
+    popup.style.display="block";
+    text.innerText="Zemřela jsi 😞";
+    buttons.innerHTML='<button onclick="restart()">Ještě to zkusím..</button>';
+}
+
+function restart(){
+    popup.style.display="none";
+    startGame();
+}
+
+function winGame(){
+    gameOver=true;
+    clearInterval(fireInterval);
+    document.getElementById("gameContainer").style.display="none";
+    popup.style.display="block";
+    text.innerText="Uf, teď když jsi mu utekla..";
+    buttons.innerHTML='<button onclick="askValentine()">Ano?</button>';
+}
+
+/* VALENTÝN */
+function askValentine(){
+    text.innerText="Budeš moje valentýnka? 💘";
+    buttons.innerHTML=`
+        <button onclick="yes()">ANO ❤️</button>
+        <button id="noBtn" onclick="moveNo()">NE 😈</button>
+    `;
+}
+
+function moveNo(){
+    const noBtn=document.getElementById("noBtn");
+    const maxX=buttons.offsetWidth-noBtn.offsetWidth;
+    const maxY=buttons.offsetHeight-noBtn.offsetHeight;
+    noBtn.style.left=Math.random()*maxX+"px";
+    noBtn.style.top=Math.random()*maxY+"px";
+}
+
+function yes(){
+    text.innerText="YESSS 💖💖💖";
+    buttons.innerHTML="<p>Navždy 🥰</p>";
+}
+</script>
+
+</body>
+</html>
