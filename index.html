@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Pro Elíka</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .popup {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 18px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            max-width: 320px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .popup p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        /* TLAČÍTKA */
+        button {
+            padding: 16px 28px;
+            font-size: 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background-color: #ff4d6d;
+            color: white;
+            margin: 10px;
+            min-width: 130px;
+        }
+
+        button:hover {
+            background-color: #e63e5c;
+        }
+
+        /* HUDBA */
+        #musicButton {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 16px;
+            padding: 10px 16px;
+            min-width: unset;
+        }
+
+        /* MOBIL */
+        @media (max-width: 600px) {
+            .popup {
+                width: 85%;
+                padding: 25px;
+            }
+
+            .popup p {
+                font-size: 20px;
+            }
+
+            button {
+                font-size: 22px;
+                padding: 18px 30px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- POPUP -->
+    <div class="popup" id="popup">
+        <p id="text">Ahoj 😊</p>
+        <button onclick="nextText()">Další</button>
+    </div>
+
+    <!-- HUDBA -->
+    <audio id="bgMusic" src="valentyn.mp3" loop></audio>
+    <button id="musicButton">🎵 Hudba</button>
+
+    <script>
+        const texts = [
+            "Ahoj 😊",
+            "Chtěl jsem ti něco říct…",
+            "Už nějakou dobu na tebe myslím 💭",
+            "Jsi pro mě opravdu výjimečná…",
+            "A tak mě napadla jedna otázka…",
+            "Budeš moje Valentýnka? 💖"
+        ];
+
+        let index = 0;
+
+        function nextText() {
+            index++;
+            if (index < texts.length - 1) {
+                document.getElementById("text").innerText = texts[index];
+            } else {
+                document.getElementById("popup").innerHTML = `
+                    <p style="font-size:22px;">${texts[texts.length - 1]}</p>
+                    <button onclick="answer()">ANO ❤️</button>
+                    <button onclick="answer()">ANO 😄</button>
+                `;
+            }
+        }
+
+        function answer() {
+            alert("💘 Jupí! 💘");
+        }
+
+        // Hudba – spustí se až po kliknutí (nutné pro mobily)
+        const music = document.getElementById("bgMusic");
+        document.getElementById("musicButton").onclick = () => {
+            music.play();
+        };
+    </script>
+
+</body>
+</html>
